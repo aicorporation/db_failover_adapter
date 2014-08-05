@@ -284,10 +284,13 @@ module ActiveRecord
           begin
             connection.send(method, *args, &block)
           rescue => e
-            unless active_and_available?(connection)
+            if active_and_available?(connection)
+              # Normal error occurred, raise it
+              raise e
+            else
               ignore_connection(connection, 30)
+              proxy_connection_method(current_connection, method, *args, &block)
             end
-            proxy_connection_method(current_connection, method, *args, &block)
           end
         else
           raise "Unable to find an active connection"
