@@ -8,8 +8,12 @@ Gem::Specification.new do |spec|
   spec.version       = AiFailoverAdapter::VERSION
   spec.authors       = ["Adrian Hooper"]
   spec.email         = ["adrian.hooper@aicorporation.com"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
+  spec.summary       = %q{Database adapter allowing peer-to-peer replication failover}
+  spec.description   = %q{
+    The Ai Failover Adapter allows you to setup a peer-to-peer replication
+    database environment, and have your application seemlessly switch between
+    connections in the event of a failure.
+  }
   spec.homepage      = ""
   spec.license       = "MIT"
 
