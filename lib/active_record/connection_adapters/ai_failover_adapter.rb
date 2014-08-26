@@ -144,7 +144,7 @@ module ActiveRecord
       end
 
       def current_connection
-        available_connections.first.connection
+        available_connections.first.try(:connection)
       end
 
       def requires_reloading?
