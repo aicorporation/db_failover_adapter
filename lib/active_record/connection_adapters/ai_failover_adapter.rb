@@ -227,9 +227,9 @@ module ActiveRecord
       end
 
       def do_to_connections
-        @all_connections.each do |conn|
+        @available_connections.each do |conn|
           begin
-            yield(conn)
+            yield(conn) if conn.active
           rescue => e
           end
         end
