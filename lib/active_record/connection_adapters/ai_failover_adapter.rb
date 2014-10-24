@@ -135,9 +135,9 @@ module ActiveRecord
         super(connection, logger)
       end
 
-      def adapter_name
-        'Ai_Failover_Adapter'
-      end
+      # def adapter_name
+      #   'Ai_Failover_Adapter'
+      # end
 
       def all_connections
         @all_connections
