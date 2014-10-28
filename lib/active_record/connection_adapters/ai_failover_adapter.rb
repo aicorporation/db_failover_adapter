@@ -135,6 +135,8 @@ module ActiveRecord
         super(connection, logger)
       end
 
+      # TODO: Think about supering this so we can append "AIFailover"
+      # Removed so we report the underlying adapter type for SQL compatibility.
       # def adapter_name
       #   'Ai_Failover_Adapter'
       # end
