@@ -254,7 +254,6 @@ module ActiveRecord
           @logger.warn("All connections are marked dead - trying them all again") if @logger
           reset_connections
         else
-          puts "ignore_connection"
           # Remove this connection for the required amount of time
           # and also push it to the bottom of the list
           @logger.warn("Removing #{connection.inspect} from the connection pool for #{expires} seconds") if @logger
