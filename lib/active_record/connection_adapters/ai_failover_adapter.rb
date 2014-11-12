@@ -254,6 +254,7 @@ module ActiveRecord
           @logger.warn("All connections are marked dead - trying them all again") if @logger
           reset_connections
         else
+          puts "ignore_connection"
           # Remove this connection for the required amount of time
           # and also push it to the bottom of the list
           @logger.warn("Removing #{connection.inspect} from the connection pool for #{expires} seconds") if @logger
@@ -268,6 +269,7 @@ module ActiveRecord
         unless available_connection.is_reconnecting?
           Thread.new {
             begin
+              available_connection.reconnecting = true
               @logger.info("Attempting to add dead database back to connection pool") if @logger
               available_connection.reconnect!
             rescue => e
@@ -276,6 +278,7 @@ module ActiveRecord
 
               available_connection.expires = 30.seconds.from_now
               available_connection.active = false
+              available_connection.reconnecting = false
             end
           }
         end
@@ -290,7 +293,7 @@ module ActiveRecord
               # Normal error occurred, raise it
               raise e
             else
-              ignore_connection(connection, 30)
+              ignore_connection(connection,30)
               proxy_connection_method(current_connection, method, *args, &block)
             end
           end
@@ -304,8 +307,7 @@ module ActiveRecord
 
       class AvailableConnection
         attr_reader :connection, :priority
-        attr_writer :expires, :active
-        attr_reader :reconnecting
+        attr_writer :expires, :active, :reconnecting
 
         def initialize(connection, priority)
           @priority = priority
@@ -326,9 +328,8 @@ module ActiveRecord
         end
 
         def reconnect!
-          @reconnecting = true
           @connection.reconnect!
-          
+
           unless @connection.active?
             @active = false
             @reconnecting = false
