@@ -1,0 +1,12 @@
+language: ruby
+
+##
+# No need to use sudo to build this project,
+# this allows us to use a fast-starting build worker.
+sudo: false
+
+##
+# Don't redownload all the dependencies if they did not change.
+cache: bundler
+
+script: echo "no tests yet"
