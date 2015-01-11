@@ -6,8 +6,8 @@ require 'ai_failover_adapter/version'
 Gem::Specification.new do |spec|
   spec.name          = "ai_failover_adapter"
   spec.version       = AiFailoverAdapter::VERSION
-  spec.authors       = ["Adrian Hooper"]
-  spec.email         = ["adrian.hooper@aicorporation.com"]
+  spec.authors       = ["ai Corporation"]
+  spec.email         = ["antoniosn@aicorporation.com"]
   spec.summary       = %q{Database adapter allowing peer-to-peer replication failover}
   spec.description   = %q{
     The Ai Failover Adapter allows you to setup a peer-to-peer replication
@@ -15,7 +15,7 @@ Gem::Specification.new do |spec|
     connections in the event of a failure.
   }
   spec.homepage      = ""
-  spec.license       = "MIT"
+  spec.license       = "Apache 2.0"
 
   spec.files         = `git ls-files -z`.split("\x0")
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
