@@ -146,7 +146,13 @@ module ActiveRecord
       end
 
       def current_connection
-        available_connections.first.try(:connection)
+        # available_connections.first.try(:connection)
+
+        # Instead of doing an optimistic try, loop over all the 
+        # available db connections and do an optimistic try, do an active?
+        # and pick the first (may be we can avoid calling active?)
+
+        available_connections.detect { |conn| conn.try(:connection) && conn.try(:connection).active? }.try(:connection)
       end
 
       def requires_reloading?
