@@ -2,7 +2,7 @@ module ActiveRecord
   module ConnectionHandling
 
     #
-    # Active record will call this method to 
+    # Active record will call this method to
     # establish a connection. This will in
     # turn create multiple connections to the
     # different databases supplied by the
@@ -89,8 +89,10 @@ module ActiveRecord
       attr_reader :available_connections
       attr_reader :current_connection
 
+      # wait time for checking availability of any lost connections
+      # default time set as 30 secs 
       cattr_accessor :wait_time
-      @@wait_time ||= 30 # default time set as 30 secs
+      @@wait_time ||= 30
 
       class << self
 
@@ -151,7 +153,7 @@ module ActiveRecord
       def current_connection
         available_connections.first.try(:connection)
 
-        # Instead of doing an optimistic try, loop over all the 
+        # Instead of doing an optimistic try, loop over all the
         # available db connections and do an optimistic try, do an active?
         # and pick the first (may be we can avoid calling active?)
 
@@ -229,7 +231,7 @@ module ActiveRecord
         # Now that that's done, only return active connections, and in
         # order of priority. This way the highest priority connections
         # will always get used when available. Priority is simply
-        # determined by the order in which they are added to the 
+        # determined by the order in which they are added to the
         # configuration
         active = connections.map { |ac| ac if ac.active? }.flatten
         active.sort_by { |ac| ac.priority }
@@ -273,16 +275,16 @@ module ActiveRecord
       def reconnect_in_background(available_connection)
         unless available_connection.is_reconnecting?
             begin
-              available_connection.set_connection_state(reconnecting: true) 
+              available_connection.set_connection_state(reconnecting: true)
               @logger.info("Attempting to add dead database back to connection pool") if @logger
               available_connection.reconnect!
             rescue => e
               if @logger
                  @logger.warn("Failed to reconnect to database when adding connect back to the pool")
                  @logger.warn(e)
-              end   
-              
-              available_connection.set_connection_state(expires: wait_time.seconds.from_now, active: false, reconnecting: false) 
+              end
+
+              available_connection.set_connection_state(expires: wait_time.seconds.from_now, active: false, reconnecting: false)
             end
         end
       end
@@ -332,7 +334,7 @@ module ActiveRecord
 
         def set_connection_state(state_hash={})
           state_hash.each { |k, v| send("#{k}=", v) }
-        end 
+        end
 
         def reconnect!
           @connection.reconnect!
