@@ -35,5 +35,9 @@ module AiFailoverAdapter
       configs
     end
 
+    def time_to_check_available_connection(time_in_secs)
+      ActiveRecord::ConnectionAdapters::AiFailoverAdapter.wait_time = time_in_secs
+    end 
+
   end
 end
