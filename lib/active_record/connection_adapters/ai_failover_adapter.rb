@@ -151,13 +151,13 @@ module ActiveRecord
       end
 
       def current_connection
-        available_connections.first.try(:connection)
+        # available_connections.first.try(:connection)
 
         # Instead of doing an optimistic try, loop over all the
         # available db connections and do an optimistic try, do an active?
         # and pick the first (may be we can avoid calling active?)
 
-        # available_connections.detect { |conn| conn.try(:connection) && conn.try(:connection).active? }.try(:connection)
+        available_connections.detect { |conn| conn.try(:connection) }.try(:connection)
       end
 
       def requires_reloading?
@@ -218,23 +218,30 @@ module ActiveRecord
       end
 
       def available_connections
-        available = @available_connections
         connections = []
-        available.each do |conn|
-          if conn.active?
-            connections << conn
-          elsif conn.expired?
-              Thread.new { reconnect_in_background(conn) }
-          end
-        end
+        connections = @available_connections.select { |a| a.active? }
 
+        if connections.empty? 
+          @available_connections.each do |conn|
+            begin
+              conn.reconnect!
+              conn.set_connection_state(active: true) 
+              connections << conn if conn.active?
+            rescue => e
+              @logger.warn("Failed to reconnect to database when adding connect back to the pool") if @logger
+              conn.set_connection_state(active: false)
+            end    
+          end
+        end 
+        
+        connections
         # Now that that's done, only return active connections, and in
         # order of priority. This way the highest priority connections
         # will always get used when available. Priority is simply
         # determined by the order in which they are added to the
         # configuration
-        active = connections.map { |ac| ac if ac.active? }.flatten
-        active.sort_by { |ac| ac.priority }
+        # active = connections.map { |ac| ac if ac.active? }.flatten
+        # active.sort_by { |ac| ac.priority }
       end
 
       def do_to_connections
@@ -254,40 +261,41 @@ module ActiveRecord
         end
       end
 
-      def ignore_connection(connection, expires)
-        available = available_connections
-        connections = available.reject { |c| c == connection }
+      # def ignore_connection(connection, expires)
+        # available = available_connections
+        # connections = available.reject { |c| c == connection }
+        
 
         # There are no connections left. Whoops. Retry them
-        if connections.empty?
-          @logger.warn("All connections are marked dead - trying them all again") if @logger
-          reset_connections
-        else
-          # Remove this connection for the required amount of time
-          # and also push it to the bottom of the list
-          @logger.warn("Removing #{connection.inspect} from the connection pool for #{expires} seconds") if @logger
-          available_connection = @available_connections.delete_at(@available_connections.index { |c| c.connection == connection })
-          available_connection.set_connection_state(active: false, expires: wait_time.seconds.from_now)
-          @available_connections.push(available_connection)
-        end
-      end
+        # if connections.empty?
+        #   @logger.warn("All connections are marked dead - trying them all again") if @logger
+        #   reset_connections
+        # else
+        #   # Remove this connection for the required amount of time
+        #   # and also push it to the bottom of the list
+        #   @logger.warn("Removing #{connection.inspect} from the connection pool for #{expires} seconds") if @logger
+        #   available_connection = @available_connections.delete_at(@available_connections.index { |c| c.connection == connection })
+        #   available_connection.set_connection_state(active: false, expires: wait_time.seconds.from_now)
+        #   @available_connections.push(available_connection)
+        # end
+      # end
 
-      def reconnect_in_background(available_connection)
-        unless available_connection.is_reconnecting?
-            begin
-              available_connection.set_connection_state(reconnecting: true)
-              @logger.info("Attempting to add dead database back to connection pool") if @logger
-              available_connection.reconnect!
-            rescue => e
-              if @logger
-                 @logger.warn("Failed to reconnect to database when adding connect back to the pool")
-                 @logger.warn(e)
-              end
+      # def reconnect_in_background(available_connection)
+      #   unless available_connection.is_reconnecting?
+      #       begin
+      #         available_connection.set_connection_state(reconnecting: true)
+      #         @logger.info("Attempting to add dead database back to connection pool") if @logger
+      #         available_connection.reconnect!
+      #       rescue => e
+      #         if @logger
+      #            @logger.warn("Failed to reconnect to database when adding connect back to the pool")
+      #            @logger.warn(e)
+      #         end
 
-              available_connection.set_connection_state(expires: wait_time.seconds.from_now, active: false, reconnecting: false)
-            end
-        end
-      end
+      #         available_connection.set_connection_state(expires: wait_time.seconds.from_now, active: false, reconnecting: false)
+      #       end
+      #   end
+      # end
 
       def proxy_connection_method(connection, method, *args, &block)
         unless connection.blank?
@@ -298,7 +306,8 @@ module ActiveRecord
               # Normal error occurred, raise it
               raise e
             else
-              ignore_connection(connection, wait_time)
+              # ignore_connection(connection, wait_time)
+              @available_connections.detect { |c| c.connection == connection }.set_connection_state(active: false)
               proxy_connection_method(current_connection, method, *args, &block)
             end
           end
